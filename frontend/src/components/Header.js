@@ -9,6 +9,8 @@ import React, { useState, useEffect, useContext } from 'react';
 const Header = () => {
     const [name, setName] = useState('');
     const [user, setUser] = useState([]);
+    const [edit, setEdit] = useState(false);
+    const [name_edit, setNameEdit] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -30,32 +32,55 @@ const Header = () => {
 
     const resetInputs = () => {
         setName('');
+        setNameEdit('');
+        setEdit(false);
     };
 
-    const Delete = (props) => {
+    const Delete = async (props) => {
         console.log(props);
         try {
-            const res = axios.delete(`http://localhost:4000/items/${props._id}`)
+            const res = await axios.delete(`http://localhost:4000/items/${props._id}`)
             console.log(res)
         }
         catch (err) {
             console.log(err);
         }
-        window.location.reload(false);
+        resetInputs();
     };
 
-    const Submit = () => {
+    const Edit = async (props) => {
+        // console.log(props);
+        const res = {
+            id: props._id,
+            name: name_edit
+        };
+        await axios
+            .put(`http://localhost:4000/items/${props._id}`, res)
+            .then((r) => {
+                console.log(r.data);
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+        resetInputs();
+    };
+
+    const onChangeNameEdit = (e) => {
+        setNameEdit(e.target.value);
+
+    };
+
+    const Submit = async () => {
         const res = {
             name: name
         };
-        axios
+        await axios
             .post("http://localhost:4000/items", res)
             .then((response) => {
                 console.log(response.data);
                 user.push(response.data);
             });
         resetInputs();
-        window.location.reload(false);
     };
 
     return (
@@ -77,12 +102,35 @@ const Header = () => {
                     <h1>Task List:</h1>
                     <br></br>
                     <div className="users">
-                        {user.map((u) => (
+                        {user.map((u, idx) => (
                             <div>
-                                <h3>{u.name}</h3>
-                                <ButtonGroup variant="contained" type="submit" onClick={() => Delete(u)}>
-                                    <Button>Delete</Button>
-                                </ButtonGroup>
+                                <div key={idx}>
+                                    <h3>{u.name}</h3>
+                                    <ButtonGroup variant="contained" type="submit" onClick={() => Delete(u)}>
+                                        <Button>Delete</Button>
+                                    </ButtonGroup>
+                                    <ButtonGroup variant="contained" type="submit" onClick={() => setEdit(true)}>
+                                        <Button>Edit</Button>
+                                    </ButtonGroup>
+                                </div>
+                                <div>
+                                    {edit &&
+                                        <div>
+                                            <TextField
+                                                label="New name"
+                                                variant="outlined"
+                                                value={name_edit}
+                                                onChange={onChangeNameEdit}
+                                            />
+                                            <ButtonGroup variant="contained" type="submit" onClick={() => Edit(u)}>
+                                                <Button>Submit</Button>
+                                            </ButtonGroup>
+                                            <ButtonGroup variant="contained" color='secondary' type="submit" onClick={() => setEdit(false)}>
+                                                <Button>Cancel</Button>
+                                            </ButtonGroup>
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         ))}
 
